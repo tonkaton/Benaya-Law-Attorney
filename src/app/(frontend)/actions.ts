@@ -1,6 +1,7 @@
 'use server'
 
 import { headers } from 'next/headers'
+import { after } from 'next/server'
 
 import { getCms } from '@/lib/cms'
 import { consultationSchema, fieldErrors, type FieldErrors } from '@/lib/consultation-schema'
@@ -40,7 +41,10 @@ export async function submitConsultation(_prev: ConsultationState, formData: For
       collection: 'consultation-requests',
       data: { ...data, consentAt: new Date().toISOString(), status: 'baru' },
     })
-    await cms.jobs.queue({ task: 'sendLeadEmail', input: { leadId: String(lead.id) } })
+    const job = await cms.jobs.queue({ task: 'sendLeadEmail', input: { leadId: String(lead.id) } })
+    // send the notification right after the response (serverless has no background cron loop);
+    // if it fails, the job stays queued and the scheduled run retries it
+    after(() => cms.jobs.runByID({ id: job.id }).catch((e) => console.error('[sendLeadEmail]', e)))
     return { ok: true, message: SUCCESS }
   } catch (err) {
     console.error('[submitConsultation]', err)

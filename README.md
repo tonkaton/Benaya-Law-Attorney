@@ -37,6 +37,21 @@ Without `DATABASE_URL` the app uses a local SQLite file (`bla.db`), so no databa
 | `src/jobs/sendLeadEmail.ts` | Lead notification job (Resend; logs when no API key) |
 | `src/app/(frontend)/globals.css` | Theme tokens, section tones (`data-tl` / `data-td`), dimensional switches |
 
+## Deploy to Vercel
+
+Already wired: `vercel.json` (Singapore region, `payload migrate` before build, daily retry cron),
+Postgres migrations in `src/migrations`, Vercel Blob for uploads, lead emails sent right after each form submit.
+
+1. Import the GitHub repo in Vercel (framework: Next.js, root directory: `./`).
+2. Storage → add **Neon** (Postgres, region Singapore) and **Blob**, both connected to the project
+   (they set `DATABASE_URL` and `BLOB_READ_WRITE_TOKEN`).
+3. Environment variables: `PAYLOAD_SECRET`, `CRON_SECRET` (random strings), `NEXT_PUBLIC_SITE_URL` (the deployment URL).
+4. Redeploy → the build creates the tables. Then either open `/admin` and create the first user (becomes Admin),
+   or seed demo content from your machine with the production `DATABASE_URL` + `BLOB_READ_WRITE_TOKEN` and `NODE_ENV=production`, then redeploy.
+
+**Schema changes:** after editing collections, run `pnpm payload migrate:create <name>` with a postgres `DATABASE_URL`
+(no server needed — it diffs offline) and `BLOB_READ_WRITE_TOKEN` set (the Blob plugin adds a column), then commit the new migration.
+
 ## Production checklist
 
 1. **Database** — set `DATABASE_URL=postgres://…`, then `pnpm payload migrate:create` (once) and `pnpm payload migrate` on deploy.
