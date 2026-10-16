@@ -1,0 +1,5 @@
+# pnpm 11: packages allowed to run install scripts (native binaries)
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
